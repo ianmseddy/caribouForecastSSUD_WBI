@@ -1,0 +1,94 @@
+repos <- c("https://predictiveecology.r-universe.dev", getOption("repos"))
+source("https://raw.githubusercontent.com/PredictiveEcology/pemisc/refs/heads/development/R/getOrUpdatePkg.R")
+getOrUpdatePkg(c("Require", "SpaDES.project"), c("1.0.1.9003", "0.1.1.9009")) # only install/update if required
+#remotes::install_github("PredictiveEcology/SpaDES.project@development")
+# Version should be 0.1.1.9009
+#remotes::install_github("PredictiveEcology/reproducible@prepInputsForMacZip2")
+
+
+
+# update this for wherever you have this project stored
+repos <- c("https://predictiveecology.r-universe.dev", getOption("repos"))
+source("https://raw.githubusercontent.com/PredictiveEcology/pemisc/refs/heads/development/R/getOrUpdatePkg.R")
+getOrUpdatePkg(c("Require", "SpaDES.project"), c("1.0.1.9003", "0.1.1.9009")) # only install/update if required
+#remotes::install_github("PredictiveEcology/SpaDES.project@development")
+# Version should be 0.1.1.9009
+#remotes::install_github("PredictiveEcology/reproducible@prepInputsForMacZip2")
+
+
+
+# update this for wherever you have this project stored
+projPath = "caribouForecastSSUD_WBI"
+
+
+out <- SpaDES.project::setupProject(
+  Restart = TRUE,
+  useGit = TRUE,
+  updateRprofile = FALSE,
+  paths = list(projectPath = projPath,
+               inputPath = "inputs",
+               outputPath = "outputs",
+               cachePath = "cache"
+  ),
+  
+  modules = c("PredictiveEcology/Biomass_borealDataPrep@development",
+              "PredictiveEcology/Biomass_core@main",
+              "PredictiveEcology/Biomass_regeneration@main",
+              file.path("PredictiveEcology/scfm@development/modules",
+                        c("scfmDataPrep",
+                          "scfmIgnition", "scfmEscape", "scfmSpread",
+                          "scfmDiagnostics")),
+              #note scfm is a series of modules on a single git repository
+              'JWTurn/caribou_SSUD@main'
+              
+  ),
+  params = list(
+    .globals = list(
+      dataYear = 2011, #will get kNN 2011 data, and NTEMS 2011 landcover
+      sppEquivCol = "LandR",
+      .plots = c("png"),
+      .studyAreaName=  "caribouWBI_4maps",
+      .useCache = c(".inputObjects", "init")
+    ),
+    scfmDataPrep = list(targetN = 2000, #default is 4000 - higher targetN adds time + precision
+                        # targetN would ideally be minimum 2000 - mean fire size estimates will be bad with 1000
+                        .useParallelFireRegimePolys = TRUE) #assumes parallelization is an otpion
+    
+  ),
+  options = list(#spades.allowInitDuringSimInit = TRUE,
+    spades.allowSequentialCaching = TRUE,
+    spades.moduleCodeChecks = FALSE,
+    spades.recoveryMode = 1
+  ),
+  packages = c('RCurl', 'XML', 'snow', 'googledrive', 'httr2', "terra", "PredictiveEcology/reproducible@prepInputsForMacZip2"),
+  times = list(start = 2011, end = 2031),
+  #70 years of fire should be enough to evaluate MAAB ## I'm currently testing
+  studyArea = {
+    sa <- reproducible::prepInputs(url = 'https://drive.google.com/file/d/1XduunieEoZLcNPQphGXnKG7Ql9MF1bme/view?usp=share_link',
+                                   destinaionPath = file.path(projPath, "data", "prepInputs"),
+                                   targetFile = "studyArea_4maps.shp",
+                                   alsoExtract = "similar", fun = "terra::vect")
+  },
+  # my area is so large probably don't need saLarge and rastertomatchLarge ****
+  studyAreaLarge = {
+    terra::buffer(studyArea, 2000)
+  },
+  rasterToMatchLarge = {
+    rtml<- terra::rast(studyAreaLarge, res = c(250,250))
+    rtml[] <- 1
+    rtml <- terra::mask(rtml, studyAreaLarge)
+  },
+  rasterToMatch = {
+    rtm <- reproducible::postProcess(rasterToMatchLarge, cropTo = studyArea, maskTo = studyArea)
+  },
+  sppEquiv = {
+    speciesInStudy <- LandR::speciesInStudyArea(studyAreaLarge)
+    species <- LandR::equivalentName(speciesInStudy$speciesList, df = LandR::sppEquivalencies_CA, "LandR")
+    sppEquiv <- LandR::sppEquivalencies_CA[LandR %in% species]
+    sppEquiv <- sppEquiv[KNN != "" & LANDIS_traits != ""] #avoid a bug with shore pine
+  }
+  
+)
+
+outSim <- SpaDES.core::simInitAndSpades2(out) |>
+  reproducible::Cache()
