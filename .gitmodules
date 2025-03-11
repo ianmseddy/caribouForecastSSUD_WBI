@@ -7,3 +7,15 @@
 [submodule "modules/Biomass_regeneration"]
 	path = modules/Biomass_regeneration
 	url = https://github.com/PredictiveEcology/Biomass_regeneration
+[submodule "modules/scfm"]
+	path = modules/scfm
+	url = https://github.com/PredictiveEcology/scfm
+[submodule "modules/caribou_SSUD"]
+	path = modules/caribou_SSUD
+	url = https://github.com/JWTurn/caribou_SSUD
+[submodule "modules/Biomass_speciesParameters"]
+	path = modules/Biomass_speciesParameters
+	url = https://github.com/PredictiveEcology/Biomass_speciesParameters
+[submodule "modules/modules/scfm"]
+	path = modules/modules/scfm
+	url = https://github.com/PredictiveEcology/scfm
