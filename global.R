@@ -17,7 +17,7 @@ out <- SpaDES.project::setupProject(
               "PredictiveEcology/Biomass_speciesParameters@development",
               "PredictiveEcology/scfm@sfContains",
               #note scfm is a series of modules on a single git repository
-              'JWTurn/caribou_SSUD@main'
+              'JWTurn/caribou_SSUD@iansFixes'
               
   ),
   params = list(
@@ -33,7 +33,10 @@ out <- SpaDES.project::setupProject(
   options = list(#spades.allowInitDuringSimInit = TRUE,
     spades.allowSequentialCaching = TRUE,
     spades.moduleCodeChecks = FALSE,
-    spades.recoveryMode = 1
+    spades.recoveryMode = 1, 
+    gargle_oauth_client_type = "web", #I think?
+    gargle_oauth_email = "ianmseddy@gmail.com",
+    gargle_oauth_cache = "../gargleCache"
   ),
   
   packages = c('RCurl', 'XML', 'snow', 'googledrive', 'httr2', "terra"),
@@ -79,6 +82,6 @@ out$params$scfmDataPrep = list(targetN = 2000,
                                # targetN would ideally be minimum 2000 - mean fire size estimates will be bad with 1000
                                .useParallelFireRegimePolys = TRUE) #assumes parallelization is an option
 
-# pkgload::load_all("../LandR") #while you wait for NTEMS function
+pkgload::load_all("../LandR") #while you wait for NTEMS function
 outSim <- SpaDES.core::simInitAndSpades2(out) |>
   reproducible::Cache()
