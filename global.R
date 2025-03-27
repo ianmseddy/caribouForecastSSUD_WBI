@@ -12,10 +12,10 @@ out <- SpaDES.project::setupProject(
   useGit = TRUE,
   name = "caribouForecastSSUD_WBI",
   modules = c("PredictiveEcology/Biomass_borealDataPrep@development",
-              "PredictiveEcology/Biomass_core@main",
+              "PredictiveEcology/Biomass_core@fixOfOutputs",
               "PredictiveEcology/Biomass_regeneration@development",
               "PredictiveEcology/Biomass_speciesParameters@development",
-              "PredictiveEcology/scfm@development",
+              "PredictiveEcology/scfm@sfContains",
               #note scfm is a series of modules on a single git repository
               'JWTurn/caribou_SSUD@main'
               
@@ -40,16 +40,17 @@ out <- SpaDES.project::setupProject(
   times = list(start = 2011, end = 2031),
   #70 years of fire should be enough to evaluate MAAB ## I'm currently testing
   studyArea = {
-    sa <- reproducible::prepInputs(url = 'https://drive.google.com/file/d/1XduunieEoZLcNPQphGXnKG7Ql9MF1bme/view?usp=share_link',
-                                   destinationPath = "inputs",
-                                   targetFile = "studyArea_4maps.shp",
-                                   alsoExtract = "similar", fun = "terra::vect")
+    sa <- reproducible::prepInputs(url = 'https://drive.google.com/file/d/1iq1f53pAtZFIFoN1RFhlXEghSbvI3Dnf/view?usp=share_link',
+                                   destinationPath = paths$inputPath,
+                                   targetFile = "studyArea_bcnwt_4sims.shp",
+                                   alsoExtract = "similar", fun = "terra::vect") |>
+      reproducible::Cache()
+    return(sa)
   },
   studyAreaLarge = {
     terra::buffer(studyArea, 2000)
   },
-  studyAreaLarge = sf::st_buffer(studyArea, 10000),
-  
+
   rasterToMatchLarge = {
     rtml<- terra::rast(studyAreaLarge, res = c(250,250))
     rtml[] <- 1
@@ -78,6 +79,6 @@ out$params$scfmDataPrep = list(targetN = 2000,
                                # targetN would ideally be minimum 2000 - mean fire size estimates will be bad with 1000
                                .useParallelFireRegimePolys = TRUE) #assumes parallelization is an option
 
-pkgload::load_all("../LandR") #while you wait for NTEMS function
+# pkgload::load_all("../LandR") #while you wait for NTEMS function
 outSim <- SpaDES.core::simInitAndSpades2(out) |>
   reproducible::Cache()
