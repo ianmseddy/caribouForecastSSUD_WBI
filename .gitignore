@@ -5,3 +5,10 @@
 .DS_Store
 .quarto
 .Rprofile
+cache
+inputs
+outputs
+.RData
+.secret
+.secrets
+.Restart*
