@@ -10,12 +10,16 @@ projPath <- getwd()
 
 out <- SpaDES.project::setupProject(
   useGit = TRUE,
+  paths = list(inputPath = "inputs", 
+               cachePath = "cache", 
+               outputPath = "outputs", 
+               modulePath = "modules"),
   name = "caribouForecastSSUD_WBI",
   modules = c("PredictiveEcology/Biomass_borealDataPrep@development",
               "PredictiveEcology/Biomass_core@fixOfOutputs",
               "PredictiveEcology/Biomass_regeneration@development",
               "PredictiveEcology/Biomass_speciesParameters@development",
-              "PredictiveEcology/scfm@sfContains",
+              "PredictiveEcology/scfm@development",
               #note scfm is a series of modules on a single git repository
               'JWTurn/caribou_SSUD@iansFixes'
               
@@ -39,7 +43,7 @@ out <- SpaDES.project::setupProject(
     gargle_oauth_cache = "../gargleCache"
   ),
   
-  packages = c('RCurl', 'XML', 'snow', 'googledrive', 'httr2', "terra"),
+  packages = c('RCurl', 'XML', 'snow', 'googledrive', 'httr2', "terra", "bcdata"),
   times = list(start = 2011, end = 2031),
   #70 years of fire should be enough to evaluate MAAB ## I'm currently testing
   studyArea = {
@@ -68,7 +72,10 @@ out <- SpaDES.project::setupProject(
     species <- LandR::equivalentName(speciesInStudy$speciesList, df = LandR::sppEquivalencies_CA, "LandR")
     sppEquiv <- LandR::sppEquivalencies_CA[LandR %in% species]
     sppEquiv <- sppEquiv[KNN != "" & LANDIS_traits != ""] #avoid a bug with shore pine
-  }
+  }, 
+  treedFirePixelTableSinceLastDisp = data.table(pixelIndex = integer(0),
+                                                 pixelGroup = integer(0),
+                                                 burnTime = numeric(0))
 )
 
 out$modules <- c("Biomass_borealDataPrep", "Biomass_core",
@@ -78,10 +85,10 @@ out$modules <- c("Biomass_borealDataPrep", "Biomass_core",
                  "caribou_SSUD")
 out$paths$modulePath <- c("modules", "modules/scfm/modules")
 out$params$scfmDataPrep = list(targetN = 2000,
-                               fireRegimePolysType = c("FRU"),
+                               fireRegimePolysType = c("BECNDT"),
                                # targetN would ideally be minimum 2000 - mean fire size estimates will be bad with 1000
                                .useParallelFireRegimePolys = TRUE) #assumes parallelization is an option
 
-pkgload::load_all("../LandR") #while you wait for NTEMS function
+
 outSim <- SpaDES.core::simInitAndSpades2(out) |>
   reproducible::Cache()
