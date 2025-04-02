@@ -1,10 +1,7 @@
-# update this for wherever you have this project stored
+
 repos <- c("https://predictiveecology.r-universe.dev", getOption("repos"))
 source("https://raw.githubusercontent.com/PredictiveEcology/pemisc/refs/heads/development/R/getOrUpdatePkg.R")
 getOrUpdatePkg(c("Require", "SpaDES.project"), c("1.0.1.9003", "0.1.1.9009")) # only install/update if required
-#remotes::install_github("PredictiveEcology/SpaDES.project@development")
-# Version should be 0.1.1.9009
-#remotes::install_github("PredictiveEcology/reproducible@prepInputsForMacZip2")
 
 projPath <- getwd()
 
@@ -20,9 +17,7 @@ out <- SpaDES.project::setupProject(
               "PredictiveEcology/Biomass_regeneration@development",
               "PredictiveEcology/Biomass_speciesParameters@development",
               "PredictiveEcology/scfm@development",
-              #note scfm is a series of modules on a single git repository
               'JWTurn/caribou_SSUD@iansFixes'
-              
   ),
   params = list(
     .globals = list(
@@ -30,9 +25,8 @@ out <- SpaDES.project::setupProject(
       sppEquivCol = "LandR",
       .plots = c("png"),
       .studyAreaName=  "caribouWBI_4maps",
-      .useCache = c(".inputObjects", "init")
-    ),
-    Biomass_speciesParamters = list("PSPdataTypes" = "dummy")
+      .useCache = c(FALSE)
+    )
   ),
   options = list(#spades.allowInitDuringSimInit = TRUE,
     spades.allowSequentialCaching = TRUE,
@@ -57,10 +51,8 @@ out <- SpaDES.project::setupProject(
   studyAreaLarge = {
     terra::buffer(studyArea, 2000)
   },
-
   rasterToMatchLarge = {
-    rtml<- terra::rast(studyAreaLarge, res = c(250,250))
-    rtml[] <- 1
+    rtml<- terra::rast(studyAreaLarge, res = c(250,250), vals = 1)
     rtml <- terra::mask(rtml, studyAreaLarge)
   },
   rasterToMatch = {
@@ -68,7 +60,6 @@ out <- SpaDES.project::setupProject(
   },
   sppEquiv = {
     speciesInStudy <- LandR::speciesInStudyArea(studyAreaLarge, dPath = "inputs")
-    
     species <- LandR::equivalentName(speciesInStudy$speciesList, df = LandR::sppEquivalencies_CA, "LandR")
     sppEquiv <- LandR::sppEquivalencies_CA[LandR %in% species]
     sppEquiv <- sppEquiv[KNN != "" & LANDIS_traits != ""] #avoid a bug with shore pine
@@ -85,9 +76,8 @@ out$modules <- c("Biomass_borealDataPrep", "Biomass_core",
                  "caribou_SSUD")
 out$paths$modulePath <- c("modules", "modules/scfm/modules")
 out$params$scfmDataPrep = list(targetN = 2000,
-                               fireRegimePolysType = c("BECNDT"),
-                               # targetN would ideally be minimum 2000 - mean fire size estimates will be bad with 1000
-                               .useParallelFireRegimePolys = TRUE) #assumes parallelization is an option
+                               fireRegimePolysType = c("FRT"),
+                               .useParallelFireRegimePolys = FALSE) #assumes parallelization is an option
 
 
 outSim <- SpaDES.core::simInitAndSpades2(out) |>
