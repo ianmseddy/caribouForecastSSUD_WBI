@@ -38,7 +38,7 @@ out <- SpaDES.project::setupProject(
   ),
   
   packages = c('RCurl', 'XML', 'snow', 'googledrive', 'httr2', "terra", "bcdata"),
-  times = list(start = 2011, end = 2031),
+  times = list(start = 2011, end = 2041),
   #70 years of fire should be enough to evaluate MAAB ## I'm currently testing
   studyArea = {
     sa <- reproducible::prepInputs(url = 'https://drive.google.com/file/d/1iq1f53pAtZFIFoN1RFhlXEghSbvI3Dnf/view?usp=share_link',
